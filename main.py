@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score
+from sklearn.decomposition import PCA
 import plotly.express as px
 import plotly.graph_objects as go
 from io import BytesIO
@@ -48,6 +49,19 @@ X = data[selected_features]
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
+# PCA
+st.subheader("Dimensionality Reduction")
+use_pca = st.checkbox("Use PCA for visualization", value=False)
+if use_pca:
+    n_components = min(3, len(selected_features))
+    pca = PCA(n_components=n_components)
+    X_pca = pca.fit_transform(X_scaled)
+    st.write(f"Explained variance ratio: {pca.explained_variance_ratio_}")
+
+    # Create a DataFrame with PCA components
+    pca_df = pd.DataFrame(data=X_pca, columns=[f'PC{i+1}' for i in range(n_components)])
+    pca_df['Cluster'] = 'Not Assigned'  # Placeholder for cluster labels
+
 # Clustering
 st.subheader("Clustering")
 clustering_algorithm = st.selectbox("Select clustering algorithm:", ["K-Means", "DBSCAN", "Agglomerative"])
@@ -67,14 +81,22 @@ cluster_labels = model.fit_predict(X_scaled)
 
 # Add cluster labels to the dataframe
 data['Cluster'] = cluster_labels
+if use_pca:
+    pca_df['Cluster'] = cluster_labels
 
 # Visualize clusters
 st.subheader("Cluster Visualization")
-if len(selected_features) >= 3:
-    fig = px.scatter_3d(data, x=selected_features[0], y=selected_features[1], z=selected_features[2],
-                        color='Cluster', hover_data=selected_features)
+if use_pca:
+    if n_components >= 3:
+        fig = px.scatter_3d(pca_df, x='PC1', y='PC2', z='PC3', color='Cluster', hover_data=['Cluster'])
+    else:
+        fig = px.scatter(pca_df, x='PC1', y='PC2', color='Cluster', hover_data=['Cluster'])
 else:
-    fig = px.scatter(data, x=selected_features[0], y=selected_features[1], color='Cluster', hover_data=selected_features)
+    if len(selected_features) >= 3:
+        fig = px.scatter_3d(data, x=selected_features[0], y=selected_features[1], z=selected_features[2],
+                            color='Cluster', hover_data=selected_features)
+    else:
+        fig = px.scatter(data, x=selected_features[0], y=selected_features[1], color='Cluster', hover_data=selected_features)
 
 st.plotly_chart(fig)
 
@@ -139,6 +161,23 @@ if clustering_algorithm != "DBSCAN":
     st.subheader("Clustering Evaluation")
     st.write(f"Silhouette Score: {silhouette_avg:.4f}")
 
+# PCA Explanation
+if use_pca:
+    st.subheader("PCA Explanation")
+    st.write("""
+    Principal Component Analysis (PCA) is a dimensionality reduction technique that helps visualize high-dimensional data in lower dimensions.
+    It works by finding the directions (principal components) along which the data varies the most.
+    The first principal component (PC1) accounts for the most variance in the data, followed by PC2, and so on.
+    
+    By using PCA, we can:
+    1. Visualize high-dimensional data in 2D or 3D plots
+    2. Reduce noise and compress data while preserving most of the important information
+    3. Identify the most important features that contribute to the variation in the data
+    
+    The "Explained variance ratio" shows how much of the total variance in the data is explained by each principal component.
+    Higher values indicate that the component captures more information from the original features.
+    """)
+
 # Conclusion
 st.subheader("Conclusion")
 st.write(f"""
@@ -153,10 +192,12 @@ Key observations:
 4. Cluster sizes show the distribution of data points across different groups.
 5. Correlation heatmap reveals relationships between selected features.
 6. Cluster profiles provide a summary of characteristics for each group.
+7. PCA helps visualize high-dimensional data and identify the most important features.
 
 To further improve this analysis, consider:
 - Fine-tuning the parameters for each clustering algorithm
 - Incorporating more advanced feature engineering techniques
 - Analyzing temporal patterns within clusters
 - Integrating external data sources (e.g., weather data, events) for richer insights
+- Exploring other dimensionality reduction techniques (e.g., t-SNE, UMAP) for comparison with PCA
 """)
