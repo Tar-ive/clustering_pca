@@ -8,6 +8,8 @@ from sklearn.decomposition import PCA
 import plotly.express as px
 import plotly.graph_objects as go
 from io import BytesIO
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import mutual_info_classif
 
 # Set page config
 st.set_page_config(page_title="Seoul Bike Clustering", layout="wide")
@@ -109,17 +111,56 @@ for cluster in range(n_clusters):
     st.write(cluster_data[selected_features].describe())
     st.write("---")
 
-# Feature importance (for K-Means only)
-if clustering_algorithm == "K-Means":
-    st.subheader("Feature Importance")
-    feature_importance = pd.DataFrame({
-        'Feature': selected_features,
-        'Importance': np.abs(model.cluster_centers_).mean(axis=0)
-    })
-    feature_importance = feature_importance.sort_values('Importance', ascending=False)
+# Feature importance analysis
+st.subheader("Feature Importance Analysis")
 
-    fig_importance = px.bar(feature_importance, x='Feature', y='Importance')
-    st.plotly_chart(fig_importance)
+# Function to calculate feature importance
+def get_feature_importance(X, labels, method='random_forest'):
+    if method == 'random_forest':
+        rf = RandomForestClassifier(n_estimators=100, random_state=42)
+        rf.fit(X, labels)
+        importance = rf.feature_importances_
+    elif method == 'mutual_info':
+        importance = mutual_info_classif(X, labels)
+    else:
+        raise ValueError("Invalid method. Choose 'random_forest' or 'mutual_info'.")
+    
+    return importance
+
+# Calculate feature importance
+if clustering_algorithm == "K-Means":
+    importance = get_feature_importance(X_scaled, cluster_labels, method='random_forest')
+    importance_method = "Random Forest"
+elif clustering_algorithm == "DBSCAN":
+    importance = get_feature_importance(X_scaled, cluster_labels, method='mutual_info')
+    importance_method = "Mutual Information"
+else:  # Agglomerative
+    importance = get_feature_importance(X_scaled, cluster_labels, method='random_forest')
+    importance_method = "Random Forest"
+
+# Create feature importance DataFrame
+feature_importance = pd.DataFrame({
+    'Feature': selected_features,
+    'Importance': importance
+})
+feature_importance = feature_importance.sort_values('Importance', ascending=False)
+
+# Display feature importance
+st.write(f"Feature Importance (using {importance_method}):")
+fig_importance = px.bar(feature_importance, x='Feature', y='Importance', title=f"Feature Importance ({importance_method})")
+st.plotly_chart(fig_importance)
+
+# Interpretation of feature importance
+st.write("""
+Feature importance analysis helps us understand which features contribute most to the clustering results. 
+The higher the importance score, the more influential the feature is in determining the cluster assignments.
+
+Interpretation:
+1. Features with high importance scores are the primary drivers of the clustering results.
+2. Features with low importance scores have less impact on the cluster assignments.
+3. This analysis can help in feature selection for future iterations of the clustering process.
+4. Different clustering algorithms may yield different feature importance results.
+""")
 
 # Cluster size comparison
 st.subheader("Cluster Size Comparison")
@@ -182,13 +223,12 @@ if use_pca:
 st.subheader("Conclusion")
 st.write(f"""
 This clustering analysis provides insights into the patterns and groupings within the Seoul Bike dataset using the {clustering_algorithm} algorithm. 
-By examining the cluster visualizations, statistics, and profiles, we can identify distinct groups of bike rental patterns.
-These insights can be used to optimize bike-sharing services, predict demand, and improve overall system efficiency.
+By examining the cluster visualizations, statistics, profiles, and feature importance, we can identify distinct groups of bike rental patterns and understand the factors that contribute most to these patterns.
 
 Key observations:
 1. The clustering algorithm and its parameters significantly impact the results.
 2. The number and shape of clusters vary depending on the chosen algorithm.
-3. Feature importance (for K-Means) highlights which factors have the most influence on cluster formation.
+3. Feature importance analysis highlights which factors have the most influence on cluster formation.
 4. Cluster sizes show the distribution of data points across different groups.
 5. Correlation heatmap reveals relationships between selected features.
 6. Cluster profiles provide a summary of characteristics for each group.
@@ -200,4 +240,5 @@ To further improve this analysis, consider:
 - Analyzing temporal patterns within clusters
 - Integrating external data sources (e.g., weather data, events) for richer insights
 - Exploring other dimensionality reduction techniques (e.g., t-SNE, UMAP) for comparison with PCA
+- Conducting a more in-depth analysis of feature importance across different clustering algorithms
 """)
