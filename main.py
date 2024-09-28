@@ -13,7 +13,13 @@ st.set_page_config(page_title="Seoul Bike Clustering", layout="wide")
 # Load data
 @st.cache_data
 def load_data():
-    return pd.read_csv("SeoulBikeData.csv")
+    try:
+        return pd.read_csv("SeoulBikeData.csv", encoding='cp949')
+    except UnicodeDecodeError:
+        try:
+            return pd.read_csv("SeoulBikeData.csv", encoding='euc-kr')
+        except UnicodeDecodeError:
+            return pd.read_csv("SeoulBikeData.csv", encoding='iso-2022-kr')
 
 data = load_data()
 
@@ -133,4 +139,3 @@ To further improve this analysis, consider:
 - Analyzing temporal patterns within clusters
 - Integrating external data sources (e.g., weather data, events) for richer insights
 """)
-
