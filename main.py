@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import silhouette_score
+from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 from sklearn.decomposition import PCA
 import plotly.express as px
 import plotly.graph_objects as go
@@ -196,11 +196,39 @@ for cluster in range(n_clusters):
     fig_profile.update_layout(title=f"Average Feature Values for Cluster {cluster}")
     st.plotly_chart(fig_profile)
 
-# Silhouette Score
+# Cluster Evaluation Metrics
+st.subheader("Cluster Evaluation Metrics")
+
 if clustering_algorithm != "DBSCAN":
     silhouette_avg = silhouette_score(X_scaled, cluster_labels)
-    st.subheader("Clustering Evaluation")
+    calinski_harabasz = calinski_harabasz_score(X_scaled, cluster_labels)
+    davies_bouldin = davies_bouldin_score(X_scaled, cluster_labels)
+    
     st.write(f"Silhouette Score: {silhouette_avg:.4f}")
+    st.write(f"Calinski-Harabasz Index: {calinski_harabasz:.4f}")
+    st.write(f"Davies-Bouldin Index: {davies_bouldin:.4f}")
+    
+    st.write("""
+    Interpretation of Cluster Evaluation Metrics:
+    
+    1. Silhouette Score:
+       - Range: -1 to 1
+       - Higher values indicate better-defined clusters
+       - A score close to 1 suggests that the data point is well-matched to its own cluster and poorly-matched to neighboring clusters
+    
+    2. Calinski-Harabasz Index:
+       - Also known as the Variance Ratio Criterion
+       - Higher values indicate better-defined clusters
+       - It measures the ratio of between-cluster dispersion to within-cluster dispersion
+    
+    3. Davies-Bouldin Index:
+       - Lower values indicate better clustering
+       - It measures the average similarity between each cluster and its most similar cluster
+    
+    These metrics help evaluate the quality of the clustering results. However, it's important to note that different metrics may favor different aspects of clustering, so it's beneficial to consider multiple metrics when assessing the results.
+    """)
+else:
+    st.write("Cluster evaluation metrics are not applicable for DBSCAN as it doesn't require a pre-defined number of clusters.")
 
 # PCA Explanation
 if use_pca:
@@ -223,7 +251,7 @@ if use_pca:
 st.subheader("Conclusion")
 st.write(f"""
 This clustering analysis provides insights into the patterns and groupings within the Seoul Bike dataset using the {clustering_algorithm} algorithm. 
-By examining the cluster visualizations, statistics, profiles, and feature importance, we can identify distinct groups of bike rental patterns and understand the factors that contribute most to these patterns.
+By examining the cluster visualizations, statistics, profiles, feature importance, and evaluation metrics, we can identify distinct groups of bike rental patterns and understand the factors that contribute most to these patterns.
 
 Key observations:
 1. The clustering algorithm and its parameters significantly impact the results.
@@ -233,6 +261,7 @@ Key observations:
 5. Correlation heatmap reveals relationships between selected features.
 6. Cluster profiles provide a summary of characteristics for each group.
 7. PCA helps visualize high-dimensional data and identify the most important features.
+8. Cluster evaluation metrics provide quantitative measures of clustering quality.
 
 To further improve this analysis, consider:
 - Fine-tuning the parameters for each clustering algorithm
@@ -241,4 +270,5 @@ To further improve this analysis, consider:
 - Integrating external data sources (e.g., weather data, events) for richer insights
 - Exploring other dimensionality reduction techniques (e.g., t-SNE, UMAP) for comparison with PCA
 - Conducting a more in-depth analysis of feature importance across different clustering algorithms
+- Comparing the performance of different clustering algorithms using the evaluation metrics
 """)
