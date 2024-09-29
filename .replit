@@ -9,7 +9,7 @@ runButton = "Project"
 [[workflows.workflow]]
 name = "Project"
 mode = "parallel"
-author = "agent"
+
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
@@ -17,7 +17,7 @@ args = "Start Streamlit App"
 
 [[workflows.workflow]]
 name = "Start Streamlit App"
-author = "agent"
+
 
 [workflows.workflow.metadata]
 agentRequireRestartOnSave = false
