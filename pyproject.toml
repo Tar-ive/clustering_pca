@@ -2,7 +2,7 @@
 name = "repl-nix-seoulbikeclustering"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Saksham Adhikari pqo14@txstate.edu"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
