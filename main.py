@@ -9,7 +9,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from io import BytesIO
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_selection import mutual_info_classif
+from sklearn.feature_selection import mutual_info_classif 
 
 # Set page config
 st.set_page_config(page_title="Seoul Bike Clustering", layout="wide")
